@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, Easing } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { useRef, useState } from "react";
 
 const domains = [
@@ -123,12 +123,12 @@ const container = {
     show: { transition: { staggerChildren: 0.15 } },
 };
 
-const cardAnim = {
+const cardAnim: Variants = {
     hidden: { opacity: 0, y: 40 },
     show: {
         opacity: 1,
         y: 0,
-        transition: { duration: 0.7, ease: "circOut" },
+        transition: { duration: 0.7 },
     },
 };
 
