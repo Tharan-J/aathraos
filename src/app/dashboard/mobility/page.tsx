@@ -57,7 +57,7 @@ export default function MobilityPage() {
             interval = setInterval(async () => {
                 // Math simulation fallback
                 setVehicles(prev => prev + Math.floor(Math.random() * 3));
-                setPersons(prev => prev + Math.floor(Math.random() * 1));
+                setPersons(prev => prev + Math.floor(Math.random() * 1.5));
 
                 try {
                     const res = await fetch('/api/mobility/stream/status');
