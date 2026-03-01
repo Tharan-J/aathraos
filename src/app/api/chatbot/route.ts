@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "dummy_key_for_build" });
 
 // ── Mock live data context ─────────────────────────────────────────────────────
 const MOCK_DATA = {
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
     if (emergencyMatch) {
       try {
         emergencyAction = JSON.parse(emergencyMatch[1]);
-      } catch {}
+      } catch { }
     }
 
     // Strip the EMERGENCY_ACTION line from the displayed text
