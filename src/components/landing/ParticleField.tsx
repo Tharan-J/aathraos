@@ -230,18 +230,21 @@ function NeuralNetwork() {
                         count={PARTICLE_COUNT}
                         array={positions}
                         itemSize={3}
+                        args={[positions, 3]}
                     />
                     <bufferAttribute
                         attach="attributes-color"
                         count={PARTICLE_COUNT}
                         array={colors}
                         itemSize={3}
+                        args={[colors, 3]}
                     />
                     <bufferAttribute
                         attach="attributes-size"
                         count={PARTICLE_COUNT}
                         array={sizes}
                         itemSize={1}
+                        args={[sizes, 1]}
                     />
                 </bufferGeometry>
                 <pointsMaterial
@@ -263,12 +266,14 @@ function NeuralNetwork() {
                         count={PARTICLE_COUNT * 2}
                         array={linePositions}
                         itemSize={3}
+                        args={[linePositions, 3]}
                     />
                     <bufferAttribute
                         attach="attributes-color"
                         count={PARTICLE_COUNT * 2}
                         array={lineColors}
                         itemSize={3}
+                        args={[lineColors, 3]}
                     />
                 </bufferGeometry>
                 <lineBasicMaterial
@@ -288,12 +293,14 @@ function NeuralNetwork() {
                         count={HUB_COUNT}
                         array={hubData.hubPositions}
                         itemSize={3}
+                        args={[hubData.hubPositions, 3]}
                     />
                     <bufferAttribute
                         attach="attributes-color"
                         count={HUB_COUNT}
                         array={hubData.hubColors}
                         itemSize={3}
+                        args={[hubData.hubColors, 3]}
                     />
                 </bufferGeometry>
                 <pointsMaterial
@@ -315,12 +322,14 @@ function NeuralNetwork() {
                         count={pulseData.count}
                         array={pulseData.pos}
                         itemSize={3}
+                        args={[pulseData.pos, 3]}
                     />
                     <bufferAttribute
                         attach="attributes-color"
                         count={pulseData.count}
                         array={pulseData.col}
                         itemSize={3}
+                        args={[pulseData.col, 3]}
                     />
                 </bufferGeometry>
                 <pointsMaterial
