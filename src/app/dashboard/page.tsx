@@ -25,82 +25,8 @@ const container = {
 
 const item = {
     hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as any } },
 };
-
-// Campus Status
-const statusCards = [
-    {
-        label: "Campus Population",
-        value: "12,847",
-        change: "+3.2%",
-        trend: "up",
-        icon: Users,
-        color: "text-cyan",
-        bgColor: "bg-cyan/10",
-    },
-    {
-        label: "Mobility Load",
-        value: "76%",
-        change: "+1.8%",
-        trend: "up",
-        icon: Car,
-        color: "text-warning",
-        bgColor: "bg-warning/10",
-    },
-    {
-        label: "Risk Level",
-        value: "Low",
-        change: "-12%",
-        trend: "down",
-        icon: ShieldCheck,
-        color: "text-success",
-        bgColor: "bg-success/10",
-    },
-    {
-        label: "Energy Consumption",
-        value: "2.4 MW",
-        change: "-5.1%",
-        trend: "down",
-        icon: Zap,
-        color: "text-accent-purple",
-        bgColor: "bg-accent-purple/10",
-    },
-];
-
-// Alerts
-const alerts = [
-    {
-        text: "Gate B congestion predicted in 12 minutes",
-        severity: "warning",
-        time: "2 min ago",
-        confidence: "94%",
-    },
-    {
-        text: "High collision risk zone detected — Zone C-7",
-        severity: "danger",
-        time: "5 min ago",
-        confidence: "87%",
-    },
-    {
-        text: "Event surge expected — North Auditorium",
-        severity: "warning",
-        time: "8 min ago",
-        confidence: "91%",
-    },
-    {
-        text: "Optimal shuttle dispatch window in 4 min",
-        severity: "info",
-        time: "10 min ago",
-        confidence: "96%",
-    },
-    {
-        text: "HVAC pre-cooling recommendation triggered",
-        severity: "info",
-        time: "15 min ago",
-        confidence: "89%",
-    },
-];
 
 // Nudges
 const nudges = [
@@ -118,7 +44,103 @@ const shuttles = [
     { id: "S-05", status: "active", route: "Express", battery: 65 },
 ];
 
+import { useState, useEffect } from "react";
+
 export default function DashboardOverview() {
+    const [personCount, setPersonCount] = useState<number>(12847);
+    const [vehicleCount, setVehicleCount] = useState<number>(450); // Raw count instead of %
+
+    const [alerts, setAlerts] = useState<any[]>([
+        { text: "Gate B congestion predicted in 12 minutes", severity: "warning", time: "2 min ago", confidence: "94%" },
+        { text: "High collision risk zone detected — Zone C-7", severity: "danger", time: "5 min ago", confidence: "87%" },
+        { text: "Event surge expected — North Auditorium", severity: "warning", time: "8 min ago", confidence: "91%" },
+        { text: "Optimal shuttle dispatch window in 4 min", severity: "info", time: "10 min ago", confidence: "96%" },
+        { text: "HVAC pre-cooling recommendation triggered", severity: "info", time: "15 min ago", confidence: "89%" },
+    ]);
+
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const res = await fetch("/api/backend/stream/status");
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === "running") {
+                        setPersonCount(data.persons);
+                        setVehicleCount(data.vehicles);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch stream status", err);
+            }
+        };
+
+        const interval = setInterval(fetchStatus, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        const fetchPredictions = async () => {
+            try {
+                const res = await fetch("/api/backend/forecast/peaks");
+                if (res.ok) {
+                    const data = await res.json();
+                    // data is a list of { Day: string, 'Peak 1': string, 'Peak 2': string, 'Peak 3': string }
+                    if (data && data.length > 0) {
+                        const newAlerts = data.slice(0, 3).map((item: any) => ({
+                            text: `High vehicle congestion predicted on ${item.Day} at ${item['Peak 1'].split(' ')[0]}`,
+                            severity: "warning",
+                            time: "ml forecast",
+                            confidence: "80%",
+                        }));
+                        setAlerts(prev => [...newAlerts, ...prev].slice(0, 7)); // max 7 alerts
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch peak forecasts", err);
+            }
+        };
+        fetchPredictions();
+    }, []);
+
+    const statusCards = [
+        {
+            label: "Campus Population",
+            value: personCount.toLocaleString(),
+            change: "+3.2%",
+            trend: "up",
+            icon: Users,
+            color: "text-cyan",
+            bgColor: "bg-cyan/10",
+        },
+        {
+            label: "Mobility Load",
+            value: vehicleCount.toLocaleString(), // Show raw vehicle count now
+            change: "+1.8%",
+            trend: "up",
+            icon: Car,
+            color: "text-warning",
+            bgColor: "bg-warning/10",
+        },
+        {
+            label: "Risk Level",
+            value: "Low",
+            change: "-12%",
+            trend: "down",
+            icon: ShieldCheck,
+            color: "text-success",
+            bgColor: "bg-success/10",
+        },
+        {
+            label: "Energy Consumption",
+            value: "2.4 MW",
+            change: "-5.1%",
+            trend: "down",
+            icon: Zap,
+            color: "text-accent-purple",
+            bgColor: "bg-accent-purple/10",
+        },
+    ];
+
     return (
         <motion.div
             variants={container}
@@ -214,7 +236,7 @@ export default function DashboardOverview() {
                             </span>
                         </div>
                         <div className="divide-y divide-border/50 max-h-[420px] overflow-y-auto">
-                            {alerts.map((alert, i) => (
+                            {alerts.map((alert: any, i: number) => (
                                 <div
                                     key={i}
                                     className="px-5 py-3.5 hover:bg-surface-elevated/30 transition-colors cursor-pointer group"
@@ -222,10 +244,10 @@ export default function DashboardOverview() {
                                     <div className="flex items-start gap-3">
                                         <span
                                             className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${alert.severity === "danger"
-                                                    ? "bg-danger"
-                                                    : alert.severity === "warning"
-                                                        ? "bg-warning"
-                                                        : "bg-cyan"
+                                                ? "bg-danger"
+                                                : alert.severity === "warning"
+                                                    ? "bg-warning"
+                                                    : "bg-cyan"
                                                 }`}
                                         />
                                         <div className="flex-1 min-w-0">
@@ -274,8 +296,8 @@ export default function DashboardOverview() {
                                     </div>
                                     <span
                                         className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${nudge.status === "active"
-                                                ? "bg-success/10 text-success"
-                                                : "bg-warning/10 text-warning"
+                                            ? "bg-success/10 text-success"
+                                            : "bg-warning/10 text-warning"
                                             }`}
                                     >
                                         {nudge.status}
@@ -317,10 +339,10 @@ export default function DashboardOverview() {
                                         <span className="text-xs font-mono font-medium text-text-primary">{shuttle.id}</span>
                                         <span
                                             className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${shuttle.status === "active"
-                                                    ? "bg-success/10 text-success"
-                                                    : shuttle.status === "charging"
-                                                        ? "bg-warning/10 text-warning"
-                                                        : "bg-surface-elevated text-text-muted"
+                                                ? "bg-success/10 text-success"
+                                                : shuttle.status === "charging"
+                                                    ? "bg-warning/10 text-warning"
+                                                    : "bg-surface-elevated text-text-muted"
                                                 }`}
                                         >
                                             {shuttle.status}
