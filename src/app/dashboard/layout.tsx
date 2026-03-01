@@ -2,6 +2,7 @@
 
 import Sidebar from "@/components/dashboard/Sidebar";
 import TopBar from "@/components/dashboard/TopBar";
+import Chatbot from "@/components/dashboard/Chatbot";
 
 export default function DashboardLayout({
     children,
@@ -15,6 +16,8 @@ export default function DashboardLayout({
                 <TopBar />
                 <main className="p-6">{children}</main>
             </div>
+            {/* AI Command Chatbot — available across all dashboard pages */}
+            <Chatbot />
         </div>
     );
 }
