@@ -1,8 +1,16 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+import os
+# Fix for Render writable filesystem and Ultralytics hanging on cloud servers
+os.environ["YOLO_CONFIG_DIR"] = "/tmp/Ultralytics"
+os.environ["YOLO_VERBOSE"] = "False"
+os.environ["YOLO_UPDATE_CHECK"] = "False"
+os.environ["YOLO_VERSION_CHECK"] = "False"
+
+from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 import threading
-import os
 from typing import Optional
+import shutil
 
 from cv_counter import TrafficCounter
 from peak_predictor import PeakPredictor
@@ -11,6 +19,10 @@ app = FastAPI(
     title="Traffic & Crowd Real-time Analytics API",
     description="API to control and query object tracking models for real-time CCTV feeds."
 )
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return {"status": "ok", "message": "Backend is running"}
 
 # Global configuration / state
 active_tracker: Optional[TrafficCounter] = None
@@ -38,6 +50,37 @@ def run_tracker_in_background(url: str, output_csv: str):
         print(f"Error in background tracker: {e}")
     finally:
         active_tracker = None
+
+@app.post("/stream/upload", tags=["CCTV Stream Management"])
+async def upload_stream(file: UploadFile = File(...)):
+    """
+    Accepts a physical video file upload (MP4, WebM, etc), saves it to disk temporarily,
+    and begins processing it in the background via the YOLO ML tracking engine.
+    """
+    global active_tracker, tracker_thread
+    
+    # Store physically for OpenCV to read
+    os.makedirs('data', exist_ok=True)
+    temp_path = f"data/uploaded_{file.filename}"
+    
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # Clean up existing stream properly
+    if active_tracker and active_tracker.is_running:
+        active_tracker.stop()
+        if tracker_thread:
+            tracker_thread.join(timeout=5.0) 
+            
+    # Launch new stream using the freshly written local file
+    tracker_thread = threading.Thread(
+        target=run_tracker_in_background,
+        args=(temp_path, "data/live_api_traffic_log.csv"),
+        daemon=True
+    )
+    tracker_thread.start()
+    
+    return {"message": f"Successfully launched tracker for {file.filename} in background"}
 
 @app.post("/stream/start", tags=["CCTV Stream Management"])
 async def start_stream(request: StreamStartRequest):
